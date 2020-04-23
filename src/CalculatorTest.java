@@ -26,12 +26,10 @@ public class CalculatorTest
 
 	private static void command(String input)
 	{
-		try {
-			Long result = calculate(input);
-			System.out.println(result);
-		} catch(Exception e) {
-			System.out.println("ERROR");
-		}
+
+		Long result = calculate(input);
+		System.out.println(result);
+
 	}
 
 	public static boolean isOperand(char ch) {
@@ -45,13 +43,16 @@ public class CalculatorTest
 		switch(c){
 			case '^':
 				num = 1;
+				break;
 			case '*':
 			case '/':
 			case '%':
 				num = 2;
+				break;
 			case '+':
 			case '-':
 				num = 3;
+				break;
 		}
 		return num;
 	}
@@ -67,6 +68,7 @@ public class CalculatorTest
 	}
 
 	public static Long operate(Long num1, Long num2, char operator) {
+		System.out.println(num1+", "+num2+", "+operator);
 		switch (operator) {
 			case '^':
 				return (long)Math.pow(num1,num2);
@@ -105,23 +107,27 @@ public class CalculatorTest
 				operandStack.push(Long.parseLong(input.substring(i-count,i))); // 숫자 push
 				count=0; // 초기
 
-				if(isPrefer(ch,operatorStack.peek())) { // 새로들어온 연산자의 우선순위가 높거나 같으 그대로 진행
+				if(operatorStack.isEmpty() || isPrefer(ch,operatorStack.peek())) { // 새로들어온 연산자의 우선순위가 높거나 같으 그대로 진행
 					operatorStack.push(input.charAt(i));
 				} else { // 새로 들어온 연산자의 우선순위가 낮으면 높아질 때까지 연산 시작
-					while(isPrefer(ch,operatorStack.peek())) {
+					while(!operatorStack.isEmpty() && !isPrefer(ch,operatorStack.peek()) ) {
 						// 괊호 없애주는 것 필요함
 						Long num2 = operandStack.pop();
 						Long num1 = operandStack.pop();
 						char operator = operatorStack.pop();
-						try {
-							operandStack.push(operate(num1,num2,operator));
-						} catch (NullPointerException ne) {
-							System.err.println("incorrect operator");
-						}
-
+						operandStack.push(operate(num1,num2,operator));
 					}
+					operatorStack.push(input.charAt(i));
 				}
 			}
+		}
+		operandStack.push(Long.parseLong(input.substring(input.length()-1)));
+		while(!operatorStack.isEmpty()) {
+			// 괊호 없애주는 것 필요함
+			Long num2 = operandStack.pop();
+			Long num1 = operandStack.pop();
+			char operator = operatorStack.pop();
+			operandStack.push(operate(num1,num2,operator));
 		}
 
 		return operandStack.pop();
