@@ -29,10 +29,9 @@ public class CalculatorTest
 	private static void command(String input)
 	{
 
-		Vector<String> result = splitAll(input);
-		for(int i=0; i<result.size(); i++) {
-			System.out.println(result.elementAt(i));
-		}
+		Vector<String> split = splitAll(input);
+		Long result = calculate(split);
+		System.out.println(result);
 
 	}
 
@@ -91,9 +90,10 @@ public class CalculatorTest
 		}
 	}
 
-//	public static boolean isOperand(String num) {
-//
-//	}
+	public static boolean isOperand(String num) {
+		if(num.charAt(0)>='0' && num.charAt(0)<='9') return true;
+		else return false;
+	}
 
 	public static Vector<String> splitAll(String input) { // split
 		Vector<String> result = new Vector<>();
@@ -140,7 +140,31 @@ public class CalculatorTest
 		Stack<Long> operandStack = new Stack<>();
 		Stack<Character> operatorStack = new Stack<>();
 
-
+		for(int i=0; i<input.size(); i++) {
+			String str = input.elementAt(i);
+			if(isOperand(str)) { // 피연산자일 때
+				operandStack.add(Long.parseLong(str));
+			} else { // 연산자일 때
+				if(operatorStack.isEmpty() || isPrefer(str.charAt(0),operatorStack.peek())) {
+					operatorStack.push(str.charAt(0));
+				} else { // 우선순위가 낮을 때
+					while(!operatorStack.isEmpty() && !isPrefer(str.charAt(0),operatorStack.peek())) {
+						Long num2 = operandStack.pop();
+						Long num1 = operandStack.pop();
+						char operator = operatorStack.pop();
+						operandStack.push(operate(num1,num2,operator));
+					}
+					if(!operatorStack.isEmpty() && operatorStack.peek()=='(') operatorStack.pop();
+					operatorStack.push(str.charAt(0));
+				}
+			}
+		}
+		while(!operatorStack.isEmpty()) {
+			Long num2 = operandStack.pop();
+			Long num1 = operandStack.pop();
+			char operator = operatorStack.pop();
+			operandStack.push(operate(num1,num2,operator));
+		}
 
 		return operandStack.pop();
 
