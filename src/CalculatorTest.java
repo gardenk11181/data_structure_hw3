@@ -1,5 +1,7 @@
 import java.io.*;
+import java.util.Queue;
 import java.util.Stack;
+import java.util.Vector;
 
 public class CalculatorTest
 {
@@ -27,12 +29,14 @@ public class CalculatorTest
 	private static void command(String input)
 	{
 
-		Long result = calculate(input);
-		System.out.println(result);
+		Vector<String> result = splitAll(input);
+		for(int i=0; i<result.size(); i++) {
+			System.out.println(result.elementAt(i));
+		}
 
 	}
 
-	public static boolean isOperand(char ch) {
+	public static boolean isNumber(char ch) {
 		// 숫자이면 true 반
 		if(ch>='0' && ch <='9') return true;
 		else return false;
@@ -87,48 +91,56 @@ public class CalculatorTest
 		}
 	}
 
-	public static Long calculate(String input) {
+//	public static boolean isOperand(String num) {
+//
+//	}
+
+	public static Vector<String> splitAll(String input) { // split
+		Vector<String> result = new Vector<>();
+		int count=0;
+		boolean isUnaric = false;
+		for(int i=0; i<input.length(); i++) {
+			char ch = input.charAt(i);
+			if(isNumber(ch)) {
+				count++;
+			} else {
+				if (ch == ' ' || ch == '\t') {
+					if(count!=0) {
+						if(isUnaric==true) {
+							isUnaric = false;
+							result.add("-"+input.substring(i-count,i));
+							count=0;
+							continue;
+						}
+						result.add(input.substring(i-count,i));
+						count=0;
+					}
+					continue;
+				}
+				if (ch == '-' && count == 0) {
+					isUnaric = true;
+					continue;
+				}
+				if(count!=0) {
+					result.add(input.substring(i-count,i));
+					count=0;
+				}
+
+				result.add(Character.toString(ch));
+			}
+		}
+		if(isUnaric==true) result.add("-"+input.substring(input.length()-count));
+		else result.add(input.substring(input.length()-count,input.length()));
+		return result;
+	}
+
+	public static Long calculate(Vector<String> input) {
 //		if(isInfix(input) == false) throw Exception();
 
 		Stack<Long> operandStack = new Stack<>();
 		Stack<Character> operatorStack = new Stack<>();
 
-		int count=0;
-		for(int i=0; i<input.length(); i++) {
-			char ch = input.charAt(i);
-			if(isOperand(ch)) {
-				count++;
-			} else {
-				if(ch == '-' && count==0) { // -가 unary 일 때
-					count++;
-					continue;
-				}
-				if(ch == ' '|| ch == '\t') continue; // 공백일 때는 아무것도 안함.
-				operandStack.push(Long.parseLong(input.substring(i-count,i))); // 숫자 push
-				count=0; // 초기
 
-				if(operatorStack.isEmpty() || isPrefer(ch,operatorStack.peek())) { // 새로들어온 연산자의 우선순위가 높거나 같으 그대로 진행
-					operatorStack.push(input.charAt(i));
-				} else { // 새로 들어온 연산자의 우선순위가 낮으면 높아질 때까지 연산 시작
-					while(!operatorStack.isEmpty() && !isPrefer(ch,operatorStack.peek()) ) {
-						// 괊호 없애주는 것 필요함
-						Long num2 = operandStack.pop();
-						Long num1 = operandStack.pop();
-						char operator = operatorStack.pop();
-						operandStack.push(operate(num1,num2,operator));
-					}
-					operatorStack.push(input.charAt(i));
-				}
-			}
-		}
-		operandStack.push(Long.parseLong(input.substring(input.length()-1)));
-		while(!operatorStack.isEmpty()) {
-			// 괊호 없애주는 것 필요함
-			Long num2 = operandStack.pop();
-			Long num1 = operandStack.pop();
-			char operator = operatorStack.pop();
-			operandStack.push(operate(num1,num2,operator));
-		}
 
 		return operandStack.pop();
 
