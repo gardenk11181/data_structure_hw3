@@ -21,7 +21,7 @@ public class CalculatorTest
 			}
 			catch (Exception e)
 			{
-				System.out.println("입력이 잘못되었습니다. 오류 : " + e.toString());
+				System.out.println("입력이 잘못되었습니다. 오류 : " + e.getMessage());
 			}
 		}
 	}
@@ -59,13 +59,12 @@ public class CalculatorTest
 		}
 		return num;
 	}
-
 	public static boolean isPrefer(char c1, char c2) {
 		// c1의 우선순위가 더 높거나 같으면 true 반환
 		int i1,i2=0;
-		if(c2=='(') return true;
-		if(c1==')') return false;
-		if(c1=='(') return true;
+		if(c2=='(') return true; // peek가 (이면
+		if(c1==')') return false; // )이면 무조건 operation 진행
+		if(c1=='(') return true; // 들어오는 문자가 (이면 무조건 push
 		return charToInt(c1)<=charToInt(c2);
 
 	}
@@ -92,6 +91,7 @@ public class CalculatorTest
 
 	public static boolean isOperand(String num) {
 		if(num.charAt(0)>='0' && num.charAt(0)<='9') return true;
+		if(num.charAt(0)=='-' && num.length()>=2) return true;
 		else return false;
 	}
 
@@ -106,7 +106,7 @@ public class CalculatorTest
 			} else {
 				if (ch == ' ' || ch == '\t') {
 					if(count!=0) {
-						if(isUnaric==true) {
+						if(isUnaric) {
 							isUnaric = false;
 							result.add("-"+input.substring(i-count,i));
 							count=0;
@@ -122,15 +122,30 @@ public class CalculatorTest
 					continue;
 				}
 				if(count!=0) {
-					result.add(input.substring(i-count,i));
+					if(isUnaric) {
+						isUnaric = false;
+						result.add("-"+input.substring(i-count,i));
+					} else {
+						result.add(input.substring(i-count,i));
+					}
 					count=0;
 				}
 
 				result.add(Character.toString(ch));
 			}
 		}
-		if(isUnaric==true) result.add("-"+input.substring(input.length()-count));
+		if(isUnaric) result.add("-"+input.substring(input.length()-count));
 		else result.add(input.substring(input.length()-count,input.length()));
+
+		if(result.lastElement().equals("")) result.remove(result.size()-1);
+
+		//debug
+		for(int i=0; i<result.size(); i++) {
+			System.out.println(result.elementAt(i)+", i: "+i);
+		}
+		//
+
+
 		return result;
 	}
 
@@ -145,17 +160,18 @@ public class CalculatorTest
 			if(isOperand(str)) { // 피연산자일 때
 				operandStack.add(Long.parseLong(str));
 			} else { // 연산자일 때
-				if(operatorStack.isEmpty() || isPrefer(str.charAt(0),operatorStack.peek())) {
-					operatorStack.push(str.charAt(0));
+				char op = str.charAt(0); // char type 연산자
+				if(operatorStack.isEmpty() || isPrefer(op,operatorStack.peek())) {
+					operatorStack.push(op);
 				} else { // 우선순위가 낮을 때
-					while(!operatorStack.isEmpty() && !isPrefer(str.charAt(0),operatorStack.peek())) {
+					do {
 						Long num2 = operandStack.pop();
 						Long num1 = operandStack.pop();
 						char operator = operatorStack.pop();
 						operandStack.push(operate(num1,num2,operator));
-					}
-					if(!operatorStack.isEmpty() && operatorStack.peek()=='(') operatorStack.pop();
-					operatorStack.push(str.charAt(0));
+					} while(!operatorStack.isEmpty() && !isPrefer(op,operatorStack.peek()) && !(operatorStack.peek()=='('));
+					if(op!=')') operatorStack.push(op);
+					if(operatorStack.peek()=='(') operatorStack.pop();
 				}
 			}
 		}
