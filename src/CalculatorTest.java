@@ -21,7 +21,7 @@ public class CalculatorTest
 			}
 			catch (Exception e)
 			{
-				System.out.println("ERROR");
+				System.out.print("ERROR\n");
 			}
 		}
 	}
@@ -31,8 +31,8 @@ public class CalculatorTest
 
 		Vector<String> split = splitAll(input);
 		String[] results = calculate(split);
-		System.out.println(results[1]);
-		System.out.println(results[0]);
+		System.out.print(results[1]+"\n");
+		System.out.print(results[0]+"\n");
 
 	}
 
@@ -194,7 +194,8 @@ public class CalculatorTest
 			count++;
 		}
 
-		return str.substring(count)+result.trim();
+		if(count==0) return str+" ";
+		else return str.substring(count)+" "+result.trim()+" ";
 	}
 
 	public static String[] calculate(Vector<String> input) {
@@ -208,7 +209,7 @@ public class CalculatorTest
 			String str = input.elementAt(i);
 			if(isOperand(str)) { // 피연산자일 때
 				operandStack.add(str);
-				result += rightAsso(str)+" ";
+				result += rightAsso(str);
 			} else { // 연산자일 때
 				char op = str.charAt(0); // char type 연산자
 				if(operatorStack.isEmpty() || isPrefer(op,operatorStack.peek())) {
