@@ -48,25 +48,29 @@ public class CalculatorTest
 			case '^':
 				num = 1;
 				break;
+			case '~':
+				num = 2;
+				break;
 			case '*':
 			case '/':
 			case '%':
-				num = 2;
+				num = 3;
 				break;
 			case '+':
 			case '-':
-				num = 3;
+				num =4;
 				break;
 		}
 		return num;
 	}
-	public static boolean isPrefer(char c1, char c2) {
+	public static boolean isPrefer(String c1, String c2) {
 		// c1의 우선순위가 더 높거나 같으면 true 반환
 		int i1,i2=0;
-		if(c2=='(') return true; // peek가 (이면
-		if(c1==')') return false; // )이면 무조건 operation 진행
-		if(c1=='(') return true; // 들어오는 문자가 (이면 무조건 push
-		return charToInt(c1)<charToInt(c2);
+		if(c2.charAt(0)=='(') return true; // peek가 (이면
+		if(c1.charAt(0)==')') return false; // )이면 무조건 operation 진행
+		if(c1.charAt(0)=='(') return true; // 들어오는 문자가 (이면 무조건 push
+		if(c1.charAt(0)=='^'&&c2.charAt(0)=='^') return true;
+		return charToInt(c1.charAt(0))<charToInt(c2.charAt(0));
 
 	}
 
@@ -91,7 +95,8 @@ public class CalculatorTest
 		Long result;
 		switch (operator) {
 			case '^':
-				result = (long)Math.pow(parseNum1,parseNum2);
+				if(parseNum1==0 && parseNum2<0) result = (long)1/0;
+				else result = (long)Math.pow(parseNum1,parseNum2);
 				break;
 			case '*':
 				result =  parseNum1*parseNum2;
@@ -100,7 +105,8 @@ public class CalculatorTest
 				result = parseNum1/parseNum2;
 				break;
 			case '%':
-				result =  parseNum1%parseNum2;
+				if(parseNum2==0) result = (long)1/0;
+				else result =  parseNum1%parseNum2;
 				break;
 			case '+':
 				result =  parseNum1+parseNum2;
@@ -117,8 +123,12 @@ public class CalculatorTest
 
 	public static boolean isOperand(String num) {
 		if(num.charAt(0)>='0' && num.charAt(0)<='9') return true;
-		if(num.charAt(0)=='~' && num.length()>=2) return true;
 		else return false;
+	}
+
+	public static boolean isOperator(String op) {
+		if(op.matches("\\+|-|\\*|%|/|^")) return true;
+		return false;
 	}
 
 	public static Vector<String> splitAll(String input) { // split
@@ -138,7 +148,8 @@ public class CalculatorTest
 					if(count!=0) {
 						if(isUnary) {
 							isUnary = false;
-							result.add(unary+input.substring(i-count,i));
+							result.add(unary);
+							result.add(input.substring(i-count,i));
 							unary = "";
 						} else {
 							result.add(input.substring(i-count,i));
@@ -156,7 +167,8 @@ public class CalculatorTest
 				if(count!=0) {
 					if(isUnary) {
 						isUnary = false;
-						result.add(unary+input.substring(i-count,i));
+						result.add(unary);
+						result.add(input.substring(i-count,i));
 						unary = "";
 					} else {
 						result.add(input.substring(i-count,i));
@@ -164,13 +176,31 @@ public class CalculatorTest
 					hasOperator = false;
 					count=0;
 				}
+				if(ch==')' && result.elementAt(result.size()-2).equals("("))  {
+					String tmp = result.lastElement();
+					result.removeElementAt(result.size()-1);
+					result.removeElementAt(result.size()-1);
+					result.add(tmp);
+				} else {
+					if((isOperator(Character.toString(ch))|| ch==')') && isOperator(result.lastElement())) {
+						int k = 1/0;
+					}
+					if(isUnary) {
+						result.add(unary);
+						isUnary = false;
+						unary = "";
+					}
+					result.add(Character.toString(ch));
+					if(ch!=')' && ch!=')') hasOperator = true;
+				}
 
-				result.add(Character.toString(ch));
-				hasOperator = true;
+
 			}
 		}
-		if(isUnary) result.add(unary+input.substring(input.length()-count));
-		else result.add(input.substring(input.length()-count,input.length()));
+		if(isUnary) {
+			result.add(unary);
+			result.add(input.substring(input.length()-count));
+		} else result.add(input.substring(input.length()-count,input.length()));
 
 		if(result.lastElement().equals("")) result.remove(result.size()-1);
 
@@ -198,22 +228,28 @@ public class CalculatorTest
 		else return str.substring(count)+" "+result.trim()+" ";
 	}
 
-	public static String[] split(String str) {
-		// rightAsso split
-		for(int i=0; i<str.length(); i++) {
-			if(str.charAt(i)==' ') {
-				System.out.println(str.substring(0,i+1)+", "+str.substring(i+1));
-				return new String[]{str.substring(0,i+1),str.substring(i+1)};
-			}
+	public static String unaryCal(String num, String unary) {
+		boolean isPositive = true;
+		for(int i=0; i<unary.length(); i++) {
+			isPositive = !isPositive;
 		}
-		return new String[]{str,""};
+		if(isPositive) return num;
+		else return "-"+num;
+	}
+
+	public static String splitUnary(String unary) {
+		String result = "";
+		for(int i=0; i<unary.length(); i++) {
+			result += "~ ";
+		}
+		return result;
 	}
 
 	public static String[] calculate(Vector<String> input) {
 //		if(isInfix(input) == false) throw Exception();
 
 		Stack<String> operandStack = new Stack<>();
-		Stack<Character> operatorStack = new Stack<>();
+		Stack<String> operatorStack = new Stack<>();
 		String result = "";
 
 		for(int i=0; i<input.size(); i++) {
@@ -222,31 +258,46 @@ public class CalculatorTest
 				operandStack.add(str);
 				result += rightAsso(str);
 			} else { // 연산자일 때
-				char op = str.charAt(0); // char type 연산자
-				if(operatorStack.isEmpty() || isPrefer(op,operatorStack.peek())) {
-					operatorStack.push(op);
+				if(operatorStack.isEmpty() || isPrefer(str,operatorStack.peek())) {
+					operatorStack.push(str);
 				} else { // 우선순위가 낮을 때
 
 					do {
-						String num2 = operandStack.pop();
-						String num1 = operandStack.pop();
-						char operator = operatorStack.pop();
-						operandStack.push(operate(num1,num2,operator));
-						result += operator+" ";
-					} while(!operatorStack.isEmpty() && !isPrefer(op,operatorStack.peek()) && !(operatorStack.peek()=='('));
-					if(op!=')') operatorStack.push(op);
-					if(operatorStack.peek()=='(') operatorStack.pop();
+						String operator = operatorStack.pop();
+						if(operator.contains("~")) {
+							String num = operandStack.pop();
+							operandStack.push(unaryCal(num,operator));
+							result += splitUnary(operator);
+						} else {
+							String num2 = operandStack.pop();
+							String num1 = operandStack.pop();
+							operandStack.push(operate(num1,num2,operator.charAt(0)));
+							result += operator+" ";
+						}
+
+					} while(!operatorStack.isEmpty() && !isPrefer(str,operatorStack.peek()) && !(operatorStack.peek().charAt(0)=='('));
+					if(str.charAt(0)!=')') operatorStack.push(str);
+					if(operatorStack.peek().charAt(0)=='(') operatorStack.pop();
 				}
 			}
 		}
 		while(!operatorStack.isEmpty()) {
-			String num2 = operandStack.pop();
-			String num1 = operandStack.pop();
-			char operator = operatorStack.pop();
-			operandStack.push(operate(num1,num2,operator));
-			result += operator+" ";
+			String operator = operatorStack.pop();
+			if(operator.contains("~")) {
+				String num = operandStack.pop();
+				operandStack.push(unaryCal(num,operator));
+				result += splitUnary(operator);
+			} else {
+				String num2 = operandStack.pop();
+				String num1 = operandStack.pop();
+				operandStack.push(operate(num1,num2,operator.charAt(0)));
+				result += operator+" ";
+			}
 		}
 
+		if(operandStack.size()!=1 || !operatorStack.isEmpty()) {
+			int i= 1/0;
+		}
 		String[] results = {operandStack.pop(),result.trim()};
 		return results;
 
